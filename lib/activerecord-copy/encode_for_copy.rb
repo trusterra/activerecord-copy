@@ -139,6 +139,10 @@ module ActiveRecordCopy
         pack_and_write_with_bufsize(io, [field], PACKED_FLOAT_32)
       when :float
         pack_and_write_with_bufsize(io, [field], PACKED_FLOAT_64)
+      when :time
+        field = Time.strptime(field, "%H:%M")
+        data = (field - field.beginning_of_day)
+        pack_and_write_with_bufsize(io, [data.to_i * 1_000_000], PACKED_UINT_64)
       when :timestamp, :timestamptz
         data = field.tv_sec * 1_000_000 + field.tv_usec - POSTGRES_EPOCH_TIME
         pack_and_write_with_bufsize(io, [data.to_i], PACKED_UINT_64)
@@ -164,7 +168,7 @@ module ActiveRecordCopy
       end
 
       case @column_types[index]
-      when :bigint, :integer, :smallint, :numeric, :float, :real
+      when :bigint, :integer, :smallint, :numeric, :float, :real, :time
         write_simple_field(io, field, @column_types[index])
       when :uuid
         pack_and_write_with_bufsize(io, [field.delete('-')], PACKED_HEX_STRING)
